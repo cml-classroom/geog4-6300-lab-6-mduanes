@@ -156,6 +156,19 @@ lab6_data$residuals <- residuals(model_multi)
 hist(lab6_data$residuals)
 # not normal, ls
 
+
+lab6_data$cooks<-cooks.distance(model_multi)
+
+cutoff<-mean(lab6_data$cooks)*4
+
+lab6_data_outliers<-lab6_data %>%
+  bind_cols(cooks_dist) %>%
+  mutate(outlier=if_else(cooks>cutoff,1,0)) 
+
+# look at outliers and residuals
+tm_shape(lab6_data_outliers) +
+  tm_dots("outlier")
+
 tm_shape(lab6_data) +
   tm_dots("residuals",size=.2)
 # no strong spatial pattern, a few random dots near the coast
@@ -163,7 +176,7 @@ tm_shape(lab6_data) +
 
 Overall, the residuals of the model were not normally distributed, with a strong left tail. Discounting that tail, the residuals did look plausibly normal, but the tail is very long.
 
-After mapping the residuals, I found no discernible pattern/autocorrelation of outlines, with the strong negative results that formed the left tail in the histogram being relatively evenly distributed around the coast of the country. I thought at first that this could be due to population centers, but after re-examining the population map I saw that this was not the case.
+After mapping the residuals and ouliers, I found no discernible pattern/autocorrelation of outlines, with the strong negative results that formed the left tail in the histogram being relatively evenly distributed around the coast of the country. I thought at first that this could be due to population centers, but after re-examining the population map I saw that this was not the case.
 
 **Question 8** _Assess any issues with multicollinearity or heteroskedastity in this model using the techniques shown in class. Run the appropriate tests and explain what their results show you._
 
