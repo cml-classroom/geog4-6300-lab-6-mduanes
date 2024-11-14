@@ -49,65 +49,152 @@ We will start by looking at data for 2020.
 
 ```{r}
 #Code goes here.
+hist(lab6_data$ndvi_20_med)
+# not normal, rs
+
+hist(lab6_data$maxtemp_20_med)
+# not normal, ls
+
+hist(lab6_data$mintemp_20_med)
+# not normal, ls
+
+hist(lab6_data$rain_20_sum)
+# not normal, rs
+
+hist(lab6_data$pop_20)
+# not normal, very rs
+
+hist(lab6_data$water_20_pct)
+# not normal, very rs
 ```
 
-{Your assessment of the variables' normality goes here.}
+None of the assessed variables were close to being normal. NDVI, rain, population, and water were all heavily right skewed, while temperature (max and min) were both moderately left skewed. 
 
 **Question 2** _Use tmap to map these same variables using Jenks natural breaks as the classification method. For an extra challenge, use `tmap_arrange` to plot all maps in a single figure._
 
 ```{r}
+library(tmap)
+map <- function(var) {
+tm_shape(lab6_data) +
+  tm_polygons(col=var,style="jenks")
+}
 
+ndvi <- map("ndvi_20_med")
+max_temp <- map("maxtemp_20_med")
+min_temp <- map("mintemp_20_med")
+rain <- map("rain_20_sum")
+population <- map("pop_20")
+water <- map("water_20_pct")
+
+tmap_arrange(ndvi,max_temp,min_temp,rain,population,water)
 ```
 
 
 **Question 3** _Based on the maps from question 3, summarise major patterns you see in the spatial distribution of these data from any of your variables of interest. How do they appear to be associated with the NDVI variable?_
 
-{Your response here.}
+The biggest trend I noticed was that temperatures were very high in the northern portion of Australia compared to the south. NDVI and rain were both highest along the coast, which makes sense given that you would expect rain and vegetation to correlate. NDVI was highest in the southeast, but was still relatively high in the north, but nonexitent in the center of the country. Population was highest in the southeastern portion of the continent, and water cover was highest in the center-east of the country. Overall, rain seemed to be most closely positively associated with NDVI, with population as a small second. Higher min/max temperatures seemed to be slightly negatively associated with NDVI, but not strongly. Water cover also appeared to be negatively associated with NDVI.
 
 **Question 4** _Create univariate models for each of the variables listed in question 1, with NDVI in 2020 as the dependent variable. Print a summary of each model. Write a summary of those results that indicates the direction, magnitude, and significance for each model coefficient._
 
 ```{r}
+# ndvi_20_med
+# maxtemp_20_med
+# mintemp_20_med
+# rain_20_sum
+# pop_20
+# water_20_pct
 
+model_maxtemp <- lm(ndvi_20_med~maxtemp_20_med,data=lab6_data)
+summary(model_maxtemp)
+
+model_mintemp <- lm(ndvi_20_med~mintemp_20_med,data=lab6_data)
+summary(model_mintemp)
+
+model_rain <- lm(ndvi_20_med~rain_20_sum,data=lab6_data)
+summary(model_rain)
+
+model_pop <- lm(ndvi_20_med~pop_20,data=lab6_data)
+summary(model_pop)
+
+model_water <- lm(ndvi_20_med~water_20_pct,data=lab6_data)
+summary(model_water)
 ```
 
-{Discussion here}
+Maxtemp: very significant (~0) associated. Solid negative (-0.13 ndvi for each degree temperature, which is quite large given the range of the index).
+Mintemp: Essentially the same as above, very significant (~0) associated. Solid negative (-0.12 ndvi for each degree temperature).
+Rain: Very significant (~0) effect. The effect was positive, but was very very small, essentially the same as 0. The R2 was not bad at 0.42, though. The relative smallness of the effect is likely attributable to the large range of the variable. The max of this variable 748,873, making the potential effect quite large. So, despite a small coefficient, the potential magnitude of this variable is actually quite high. 
+Population: Similar to rain. Very significant (~0) and positive, but very very small, again close to 0. Like with the rain variable, this is likely to be due to the large range of the variable (max of 488,069). So, despite a small coefficient, the potential magnitude of this variable is actually quite high. 
+Water: Not significant finding (0.25 p-value). Effect was solid negative, in fact it was the largest effect of the variables, despite lacking significance. R-squared close to 0.
 
 **Question 5** _Create a multivariate regression model with the variables of interest, choosing EITHER max or min temperature (but not both) You may also choose to leave out any variables that were insignificant in Q4. Use the univariate models as your guide. Call the results._
 
 ```{r}
+# ndvi_20_med
+# maxtemp_20_med
+# mintemp_20_med
+# rain_20_sum
+# pop_20
+# water_20_pct
+
 #Code goes here
+model_multi <- lm(ndvi_20_med~maxtemp_20_med+rain_20_sum+pop_20,data=lab6_data)
+summary(model_multi)
 ```
 
 **Question 6** _Summarize the results of the multivariate model. What are the direction, magnitude, and significance of each coefficient? How did it change from the univariate models you created in Q4 (if at all)? What do the R2 and F-statistic values tell you about overall model fit?_
 
-{Response goes here}
+In the multivariate model, all three variables were significant, with the p-values for rain and max temperature being close to 0 and population being close to 0.001. The effects for rain and population were both small and positive (around 0.00000001), while the temperature effect was small and negative (around 0.001). That said, as previously mentioned, the range of the rain and population variables is quite large (in the 100,00s), while the range of the maxtemp variable is quite low. Therefore, while the largest coefficeint was the temperature coefficeint, the variables most likely to strongly influence the model are rain and population.
+
+The R-Squared for the model was quite good at 0.6, meaning that about 60% of the variance in NDVI was explainable by the model. The F-statistic was 380.4 which yielded a p-value of close to zero, suggesting that this model is better than the null model and thus the overall findings are significant.
 
 **Question 7** _Use a histogram and a map to assess the normality of residuals and any spatial autocorrelation. Summarise any notable patterns that you see._
 
 ```{r}
 #Code goes here
+lab6_data$residuals <- residuals(model_multi)
+
+hist(lab6_data$residuals)
+# not normal, ls
+
+tm_shape(lab6_data) +
+  tm_dots("residuals",size=.2)
+# no strong spatial pattern, a few random dots near the coast
 ```
 
-{Summary goes here}
+Overall, the residuals of the model were not normally distributed, with a strong left tail. Discounting that tail, the residuals did look plausibly normal, but the tail is very long.
+
+After mapping the residuals, I found no discernible pattern/autocorrelation of outlines, with the strong negative results that formed the left tail in the histogram being relatively evenly distributed around the coast of the country. I thought at first that this could be due to population centers, but after re-examining the population map I saw that this was not the case.
 
 **Question 8** _Assess any issues with multicollinearity or heteroskedastity in this model using the techniques shown in class. Run the appropriate tests and explain what their results show you._
 
 ```{r}
 #Code goes here
+#multicol
+library(car)
+vif(model_multi)
+# no
+
+# heterosked
+library(lmtest)
+bptest(model_multi)
+# reject null hypo, so is heterosked
 ```
 
-{Interpretation goes here}
+The VIF test I did revealed a value close to 1 for all of my selected variables. Thus, I can conclude that there was no multicollinearity at play in my model. The BP test, however, returned a p-value below 0.05, meaning I should reject the null hypothesis that my data is not heteroskedastic and accept the alternative that it is. Thus, we know that the error is likely to be higher at one end (the negative end as we know from the histogram).
 
 **Question 9** _How would you summarise the results of this model in a sentence or two? In addition, looking at the full model and your diagnostics, do you feel this is a model that provides meaningful results? Explain your answer._
 
 ```{r}
-Discussion here
 ```
+Summary: This model shows that NDVI is strongly positively assocaited with higher population and higher rainfall, while being slightly negative associated with higher temperatures. Despite lower coefficeints, the high range of population and rain make it the biggest factor in the NDVI predicted by the model, meaning that areas with high rain/population are likely to have very high NDVI regardless of temperature.
 
+Discussion: I feel that this model does provide meaningful insights, despite the strong negative left skew in the distribution of residuals. The strong significance of each of the effects as well as the overall model, combined with the correlation suggests by the initial map survey and the high R-Squared suggest that the model is quite good at exaplining the variance in/predicting the value of NDVI.
 
 **Disclosure of assistance:** _Besides class materials, what other sources of assistance did you use while completing this lab? These can include input from classmates, relevant material identified through web searches (e.g., Stack Overflow), or assistance from ChatGPT or other AI tools. How did these sources support your own learning in completing this lab?_
 
-{Response here.}
+I read this article to refresh my understanding of what the f-statistic means in a multivariate regression. It helped me better understand how overall p-values are calculated for multivariate models. 
+
+Link: https://statisticsbyjim.com/regression/interpret-f-test-overall-significance-regression/
 
 **Lab reflection:** _How do you feel about the work you did on this lab? Was it easy, moderate, or hard? What were the biggest things you learned by completing it?_
 
