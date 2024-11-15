@@ -162,7 +162,6 @@ lab6_data$cooks<-cooks.distance(model_multi)
 cutoff<-mean(lab6_data$cooks)*4
 
 lab6_data_outliers<-lab6_data %>%
-  bind_cols(cooks_dist) %>%
   mutate(outlier=if_else(cooks>cutoff,1,0)) 
 
 # look at outliers and residuals
